@@ -1,22 +1,24 @@
-import { Metadata } from "next";
-import Dashboard from "@/pages/dashboard/Dashboard";
+import type { Metadata } from "next";
+import NoPhaiThuPage from "@/pages/nophaithu/index";
 import Navigation, { MobileBottomNav } from "@/components/layout/Navigation";
 
 export const metadata: Metadata = {
-  title: "Bảng điều khiển - Conan",
-  description: "Tổng quan hoạt động kinh doanh và thống kê tài chính - Conan",
+  title: "Nợ phải thu - Conan",
+  description: "Danh sách hợp đồng còn nợ phải thu",
 };
 
-export default function HomePage() {
+export default function Page() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4 p-4 pb-20 lg:pb-4">
       <div className="hidden lg:block">
-        <Navigation currentPage="dashboard" />
+        <Navigation currentPage="noPhaiThu" />
       </div>
       <div>
-        <Dashboard />
+        <NoPhaiThuPage />
       </div>
       <MobileBottomNav />
     </div>
-  );
+  )
 }
+
+
