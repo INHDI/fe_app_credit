@@ -44,32 +44,30 @@ export default function TinChapFilter({
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Trạng thái</label>
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white shadow-sm">
+              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white shadow-sm data-[state=open]:ring-2 data-[state=open]:ring-blue-200">
                 <SelectValue placeholder="Chọn trạng thái" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                <SelectItem value="chua_thanh_toan">Chưa thanh toán</SelectItem>
-                <SelectItem value="da_thanh_toan">Đã tất toán</SelectItem>
-                <SelectItem value="thanh_toan_mot_phan">Thanh toán một phần</SelectItem>
-                <SelectItem value="tra_xong_lai">Trả xong lãi</SelectItem>
-                <SelectItem value="den_han_tra_lai">Đến hạn trả lãi</SelectItem>
-                <SelectItem value="qua_han_tra_lai">Quá hạn trả lãi</SelectItem>
+              <SelectContent className="z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-1">
+                <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="all">Tất cả trạng thái</SelectItem>
+                <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="Chưa thanh toán">Chưa thanh toán</SelectItem>
+                <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="Đóng đủ">Đóng đủ</SelectItem>
+                <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="Thanh toán một phần">Thanh toán một phần</SelectItem>
+                <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="Đã tất toán">Đã tất toán</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Thời gian</label>
             <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
-              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white shadow-sm">
+              <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white shadow-sm data-[state=open]:ring-2 data-[state=open]:ring-blue-200">
                 <SelectValue placeholder="Chọn khoảng thời gian" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả thời gian</SelectItem>
-                <SelectItem value="hom_nay">Ngày hôm nay</SelectItem>
-                <SelectItem value="thang_nay">Tháng này</SelectItem>
-                <SelectItem value="quy_nay">Quý này</SelectItem>
-                <SelectItem value="nam_nay">Năm này</SelectItem>
+              <SelectContent className="z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-1">
+                <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="all">Tất cả thời gian</SelectItem>
+                <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="hom_nay">Ngày hôm nay</SelectItem>
+                <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="thang_nay">Tháng này</SelectItem>
+                <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="quy_nay">Quý này</SelectItem>
+                <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="nam_nay">Năm này</SelectItem>
               </SelectContent>
             </Select>
           </div>

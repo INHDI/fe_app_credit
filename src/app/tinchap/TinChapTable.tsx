@@ -6,20 +6,19 @@ import { Eye, Trash2, DollarSign } from 'lucide-react';
 import { formatCurrency } from "@/utils/formatters";
 import { CreditContract } from "@/hooks/useTinChap";
 import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
-import { getStatusText, getStatusColor } from "@/utils/statusHelpers";
 import TinChapSettleModal from "./TinChapSettleModal";
+import TinChapDetailModal from "./TinChapDetailModal";
 
 interface TinChapTableProps {
   contracts: CreditContract[];
   startIndex: number;
   itemsPerPage: number;
-  onViewDetails: (contract: CreditContract) => void;
   onSettled?: () => void;
   onDelete?: (maHopDong: string) => void | Promise<void>;
   onSettleContract?: (maHopDong: string) => void | Promise<void>;
 }
 
-export default function TinChapTable({ contracts, startIndex, onViewDetails, onSettled, onDelete, onSettleContract }: TinChapTableProps) {
+export default function TinChapTable({ contracts, startIndex, onSettled, onDelete, onSettleContract }: TinChapTableProps) {
   // Generate unique instance ID for this component instance
   const instanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
   
@@ -27,6 +26,8 @@ export default function TinChapTable({ contracts, startIndex, onViewDetails, onS
   const [selectedForDelete, setSelectedForDelete] = useState<CreditContract | null>(null);
   const [showSettle, setShowSettle] = useState(false);
   const [selectedForSettle, setSelectedForSettle] = useState<CreditContract | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [selectedForDetail, setSelectedForDetail] = useState<CreditContract | null>(null);
 
   const handleOpenSettle = (contract: CreditContract) => {
     setSelectedForSettle(contract);
@@ -36,6 +37,16 @@ export default function TinChapTable({ contracts, startIndex, onViewDetails, onS
   const handleCloseSettle = () => {
     setShowSettle(false);
     setSelectedForSettle(null);
+  };
+
+  const handleOpenDetail = (contract: CreditContract) => {
+    setSelectedForDetail(contract);
+    setShowDetail(true);
+  };
+
+  const handleCloseDetail = () => {
+    setShowDetail(false);
+    setSelectedForDetail(null);
   };
 
 
@@ -50,10 +61,11 @@ export default function TinChapTable({ contracts, startIndex, onViewDetails, onS
               <th className="text-left p-4 font-semibold text-slate-700 text-sm">STT</th>
               <th className="text-left p-4 font-semibold text-slate-700 text-sm">Mã hợp đồng</th>
               <th className="text-left p-4 font-semibold text-slate-700 text-sm">Khách hàng</th>
-              <th className="text-left p-4 font-semibold text-slate-700 text-sm">Tín chấp</th>
-              <th className="text-right p-4 font-semibold text-slate-700 text-sm">Gốc vay</th>
+              <th className="text-left p-4 font-semibold text-slate-700 text-sm">Ngày vay</th>
+              <th className="text-right p-4 font-semibold text-slate-700 text-sm">Số tiền vay</th>
               <th className="text-right p-4 font-semibold text-slate-700 text-sm">Lãi đã trả</th>
-              <th className="text-right p-4 font-semibold text-slate-700 text-sm">Còn phải thu</th>
+              <th className="text-right p-4 font-semibold text-slate-700 text-sm">Lãi còn lại</th>
+              <th className="text-right p-4 font-semibold text-slate-700 text-sm">Gốc còn lại</th>
               
               <th className="text-center p-4 font-semibold text-slate-700 text-sm">Trạng thái</th>
               <th className="text-center p-4 font-semibold text-slate-700 text-sm">Chức năng</th>
@@ -65,50 +77,45 @@ export default function TinChapTable({ contracts, startIndex, onViewDetails, onS
                 <td className="p-4 text-slate-600 font-medium">{startIndex + index + 1}</td>
                 <td className="p-4">
                   <div className="space-y-1">
-                    <div className="font-semibold text-slate-800 text-sm">{contract.ma_hop_dong}</div>
+                    <div className="font-semibold text-slate-800 text-sm">{contract.MaHD}</div>
                     <div className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md inline-block">
-                      {contract.customerInfo}
+                      Kỳ đóng: {contract.KyDong} ngày
                     </div>
                   </div>
                 </td>
                 <td className="p-4">
-                  <div className="font-medium text-slate-800">{contract.ten_khach_hang}</div>
+                  <div className="font-medium text-slate-800">{contract.HoTen}</div>
                 </td>
                 <td className="p-4">
-                  <Badge className="bg-emerald-100 text-emerald-700 border-0 font-medium px-3 py-1 rounded-full">
-                    Tín chấp
-                  </Badge>
+                  <div className="text-sm text-slate-600">{contract.NgayVay}</div>
                 </td>
                 <td className="p-4 text-right">
                   <div className="space-y-1">
-                    <div className="font-bold text-slate-800 text-sm">{formatCurrency(contract.tong_tien_vay)}</div>
-                    <div className="text-xs text-slate-500">{contract.lai_suat}/{contract.kieu_lai_suat}</div>
+                    <div className="font-bold text-slate-800 text-sm">{formatCurrency(contract.SoTienVay)}</div>
+                    <div className="text-xs text-slate-500">Lãi: {formatCurrency(contract.LaiSuat)}/kỳ</div>
                   </div>
                 </td>
                 <td className="p-4 text-right">
-                  <div className="font-bold text-green-600 text-sm">{formatCurrency(contract.total_interest_paid || 0)}</div>
+                  <div className="font-bold text-green-600 text-sm">{formatCurrency(contract.LaiDaTra || 0)}</div>
                 </td>
                 <td className="p-4 text-right">
-                  <div className="font-bold text-red-600 text-sm">{formatCurrency(contract.unpaid_amount || 0)}</div>
+                  <div className="font-bold text-red-600 text-sm">{formatCurrency(contract.LaiConLai || 0)}</div>
+                </td>
+                <td className="p-4 text-right">
+                  <div className="font-bold text-blue-600 text-sm">{formatCurrency(contract.GocConLai || 0)}</div>
                 </td>
                 
                 <td className="p-4 text-center">
                   <div className="flex flex-col gap-1 items-center">
-                    {/* Hiển thị tất cả trạng thái với màu sắc riêng */}
-                    {contract.statusList && contract.statusList.length > 1 ? (
-                      contract.statusList.map((status, index) => (
-                        <Badge 
-                          key={`desktop-${contract.ma_hop_dong}-${index}`}
-                          className={`${getStatusColor(status)} border-0 font-medium px-2 py-1 rounded-full text-xs`}
-                        >
-                          {getStatusText(status)}
-                        </Badge>
-                      ))
-                    ) : (
-                      <Badge className={`${contract.statusColor} border-0 font-medium px-3 py-1 rounded-full shadow-sm`}>
-                        {contract.status}
-                      </Badge>
-                    )}
+                    <Badge className={`${
+                      contract.TrangThai === 'Chưa thanh toán' 
+                        ? 'bg-amber-100 text-amber-700' 
+                        : contract.TrangThai === 'Đã thanh toán'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    } border-0 font-medium px-3 py-1 rounded-full shadow-sm`}>
+                      {contract.TrangThai}
+                    </Badge>
                   </div>
                 </td>
                 <td className="p-4">
@@ -120,7 +127,7 @@ export default function TinChapTable({ contracts, startIndex, onViewDetails, onS
                           size="sm" 
                           className="h-9 w-9 p-0 hover:bg-blue-50 rounded-lg transition-all duration-200 hover:shadow-sm" 
                           aria-label="Xem chi tiết"
-                          onClick={() => onViewDetails(contract)}
+                          onClick={() => handleOpenDetail(contract)}
                         >
                           <Eye className="h-4 w-4 text-blue-600" />
                         </Button>
@@ -192,48 +199,42 @@ export default function TinChapTable({ contracts, startIndex, onViewDetails, onS
           <div key={`tinchap-mobile-${instanceId}-${startIndex}-${index}-${contract.id}`} className="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-xs text-slate-500">#{startIndex + index + 1} • {contract.ma_hop_dong}</div>
-                <div className="font-semibold text-slate-800">{contract.ten_khach_hang}</div>
-                <div className="text-xs text-slate-500 mt-1">{contract.customerInfo}</div>
+                <div className="text-xs text-slate-500">#{startIndex + index + 1} • {contract.MaHD}</div>
+                <div className="font-semibold text-slate-800">{contract.HoTen}</div>
+                <div className="text-xs text-slate-500 mt-1">Ngày vay: {contract.NgayVay}</div>
               </div>
               <div className="flex flex-col gap-1 items-center">
-                {/* Hiển thị tất cả trạng thái với màu sắc riêng */}
-                {contract.statusList && contract.statusList.length > 1 ? (
-                  contract.statusList.map((status, index) => (
-                    <Badge 
-                      key={`mobile-${contract.ma_hop_dong}-${index}`}
-                      className={`${getStatusColor(status)} border-0 font-medium px-2 py-0.5 rounded-full text-xs`}
-                    >
-                      {getStatusText(status)}
-                    </Badge>
-                  ))
-                ) : (
-                  <Badge className={`${contract.statusColor} border-0 font-medium px-2 py-0.5 rounded-full`}>
-                    {contract.status}
-                  </Badge>
-                )}
+                <Badge className={`${
+                  contract.TrangThai === 'Chưa thanh toán' 
+                    ? 'bg-amber-100 text-amber-700' 
+                    : contract.TrangThai === 'Đã thanh toán'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                } border-0 font-medium px-2 py-0.5 rounded-full text-xs`}>
+                  {contract.TrangThai}
+                </Badge>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div>
-                <div className="text-xs text-slate-500">{contract.lai_suat}/{contract.kieu_lai_suat}</div>
-                <div className="text-sm font-medium text-slate-800">Tín chấp</div>
+                <div className="text-xs text-slate-500">Kỳ đóng: {contract.KyDong} ngày</div>
+                <div className="text-sm font-medium text-slate-800">Lãi: {formatCurrency(contract.LaiSuat)}/kỳ</div>
               </div>
               <div className="text-right">
-                <div className="text-xs text-slate-500">Gốc vay</div>
-                <div className="text-sm font-bold text-slate-800">{formatCurrency(contract.tong_tien_vay)}</div>
-              </div>
-              <div>
-                <div className="text-xs text-slate-500">Tổng lãi (đến hiện tại)</div>
-                <div className="text-sm font-bold text-amber-600">{formatCurrency(contract.amount_to_collect || 0)}</div>
+                <div className="text-xs text-slate-500">Số tiền vay</div>
+                <div className="text-sm font-bold text-slate-800">{formatCurrency(contract.SoTienVay)}</div>
               </div>
               <div>
                 <div className="text-xs text-slate-500">Lãi đã trả</div>
-                <div className="text-sm font-bold text-green-600">{formatCurrency(contract.total_interest_paid || 0)}</div>
+                <div className="text-sm font-bold text-green-600">{formatCurrency(contract.LaiDaTra || 0)}</div>
               </div>
               <div>
-                <div className="text-xs text-slate-500">Còn phải thu</div>
-                <div className="text-sm font-bold text-red-600">{formatCurrency(contract.unpaid_amount || 0)}</div>
+                <div className="text-xs text-slate-500">Lãi còn lại</div>
+                <div className="text-sm font-bold text-red-600">{formatCurrency(contract.LaiConLai || 0)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">Gốc còn lại</div>
+                <div className="text-sm font-bold text-blue-600">{formatCurrency(contract.GocConLai || 0)}</div>
               </div>
             </div>
             
@@ -241,7 +242,7 @@ export default function TinChapTable({ contracts, startIndex, onViewDetails, onS
               <div className="flex items-center justify-end gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="default" size="sm" className="rounded-lg flex-1" onClick={() => onViewDetails(contract)}>
+                    <Button variant="default" size="sm" className="rounded-lg flex-1" onClick={() => handleOpenDetail(contract)}>
                       <Eye className="h-4 w-4 mr-1" /> Chi tiết
                     </Button>
                   </TooltipTrigger>
@@ -287,6 +288,15 @@ export default function TinChapTable({ contracts, startIndex, onViewDetails, onS
     </div>
     
 
+    {/* Detail Modal */}
+    <TinChapDetailModal
+      isOpen={showDetail}
+      onClose={handleCloseDetail}
+      contract={selectedForDetail as any}
+      onRefresh={onSettled}
+      lichSuTraLai={selectedForDetail?.LichSuTraLai}
+    />
+
     {/* Settle Modal */}
     <TinChapSettleModal
       isOpen={showSettle}
@@ -299,13 +309,14 @@ export default function TinChapTable({ contracts, startIndex, onViewDetails, onS
       <DeleteConfirmModal
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
-        maHopDong={selectedForDelete?.ma_hop_dong}
-        tenKhachHang={selectedForDelete?.ten_khach_hang}
-        onConfirm={async () => {
+        maHopDong={selectedForDelete?.MaHD || selectedForDelete?.ma_hop_dong || ''}
+        tenKhachHang={selectedForDelete?.HoTen || selectedForDelete?.ten_khach_hang || ''}
+        loai="tin_chap"
+        afterDeleted={onDelete ? async () => {
           if (selectedForDelete) {
-            await onDelete(selectedForDelete.ma_hop_dong);
+            await onDelete(selectedForDelete.MaHD || selectedForDelete.ma_hop_dong || '');
           }
-        }}
+        } : undefined}
       />
     )}
     </TooltipProvider>

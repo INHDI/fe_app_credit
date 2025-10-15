@@ -1,5 +1,6 @@
 import { useNavigation } from "@/hooks/useNavigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { API_CONFIG, ENV_CONFIG } from "@/config/config";
 import { FileText, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
 
@@ -12,18 +13,33 @@ export type ContractStatus =
   | "qua_han_tra_lai";
 
 export interface CreditContract {
-  id: string;
-  ma_hop_dong: string;
-  ten_khach_hang: string;
-  customerInfo: string;
-  tong_tien_vay: number;
-  lai_suat: string;
-  kieu_lai_suat: string;
+  id?: string;
+  MaHD: string;
+  HoTen: string;
+  NgayVay: string;
+  SoTienVay: number;
+  KyDong: number;
+  LaiSuat: number;
+  SoTienTraGoc: number;
+  TrangThai: string;
+  LichSuTraLai?: any[];
+  LaiDaTra: number;
+  GocConLai: number;
+  LaiConLai: number;
+  // Legacy fields for backward compatibility
+  ma_hop_dong?: string;
+  ten_khach_hang?: string;
+  customerInfo?: string;
+  ngay_vay?: string;
+  tong_tien_vay?: number;
+  lai_suat?: string;
+  kieu_lai_suat?: string;
   total_interest_paid?: number;
   unpaid_amount?: number;
   amount_to_collect?: number;
-  status: string;
-  statusColor: string;
+  daily_interest?: number;
+  status?: string;
+  statusColor?: string;
   statusList?: ContractStatus[];
 }
 
@@ -55,93 +71,71 @@ export function useTinChap() {
     },
   ];
 
-  // Fake data
-  const initialContracts: CreditContract[] = useMemo(
-    () => [
-      {
-        id: "C001",
-        ma_hop_dong: "HD-TC-0001",
-        ten_khach_hang: "Nguyễn Văn A",
-        customerInfo: "CCCD 012345678901",
-        tong_tien_vay: 50000000,
-        lai_suat: "3%",
-        kieu_lai_suat: "thang",
-        total_interest_paid: 3000000,
-        unpaid_amount: 12000000,
-        amount_to_collect: 1500000,
-        status: "Chưa thanh toán",
-        statusColor: "bg-amber-100 text-amber-700",
-        statusList: ["chua_thanh_toan", "den_han_tra_lai"],
-      },
-      {
-        id: "C002",
-        ma_hop_dong: "HD-TC-0002",
-        ten_khach_hang: "Trần Thị B",
-        customerInfo: "CCCD 098765432109",
-        tong_tien_vay: 30000000,
-        lai_suat: "2.5%",
-        kieu_lai_suat: "thang",
-        total_interest_paid: 8000000,
-        unpaid_amount: 0,
-        amount_to_collect: 0,
-        status: "Đã tất toán",
-        statusColor: "bg-emerald-100 text-emerald-700",
-        statusList: ["da_thanh_toan"],
-      },
-      {
-        id: "C003",
-        ma_hop_dong: "HD-TC-0003",
-        ten_khach_hang: "Lê Văn C",
-        customerInfo: "CCCD 034567890123",
-        tong_tien_vay: 80000000,
-        lai_suat: "3.2%",
-        kieu_lai_suat: "thang",
-        total_interest_paid: 5500000,
-        unpaid_amount: 25000000,
-        amount_to_collect: 2200000,
-        status: "Thanh toán một phần",
-        statusColor: "bg-blue-100 text-blue-700",
-        statusList: ["thanh_toan_mot_phan"],
-      },
-    ],
-    []
-  );
-
-  // UI state
-  const [contracts, setContracts] = useState<CreditContract[]>(initialContracts);
+  // Data state
+  const [contracts, setContracts] = useState<CreditContract[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("NgayVay");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const itemsPerPage = 10;
+
+  const fetchContracts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const url = new URL(`${ENV_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.TIN_CHAP}`);
+      url.searchParams.set("page", String(currentPage));
+      url.searchParams.set("page_size", String(itemsPerPage));
+      if (selectedStatus && selectedStatus !== "all") {
+        url.searchParams.set("status", selectedStatus);
+      }
+      if (searchTerm.trim()) {
+        url.searchParams.set("search", searchTerm.trim());
+      }
+      url.searchParams.set("sort_by", sortBy);
+      url.searchParams.set("sort_dir", sortDir);
+
+      const resp = await fetch(url.toString(), { headers: { accept: "application/json" } });
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+      }
+      const json = await resp.json();
+      if (json?.success && Array.isArray(json.data)) {
+        setContracts(json.data as CreditContract[]);
+      } else {
+        setContracts([]);
+      }
+    } catch (e: any) {
+      setError(e?.message || "Fetch tín chấp thất bại");
+      setContracts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage, sortBy, sortDir, selectedStatus, searchTerm]);
+
+  useEffect(() => {
+    fetchContracts();
+  }, [fetchContracts]);
 
   // Derived data
   const filteredContracts = useMemo(() => {
     let list = contracts;
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase();
-      list = list.filter(
-        (c) =>
-          c.ma_hop_dong.toLowerCase().includes(q) ||
-          c.ten_khach_hang.toLowerCase().includes(q) ||
-          c.customerInfo.toLowerCase().includes(q)
-      );
-    }
-    if (selectedStatus !== "all") {
-      list = list.filter((c) =>
-        (c.statusList || []).includes(selectedStatus as any)
-      );
-    }
-    // selectedTimeRange is ignored in fake mode, kept for API parity
+    // server-side filtered by search/status; keep as passthrough here
     return list;
-  }, [contracts, searchTerm, selectedStatus]);
+  }, [contracts]);
 
-  const countAllItems = filteredContracts.length;
-  const totalPages = Math.ceil(countAllItems / itemsPerPage) || 0;
-  const safeCurrentPage = Math.min(Math.max(currentPage, 1), Math.max(totalPages, 1));
-  const startIndex = (safeCurrentPage - 1) * itemsPerPage;
-  const paginatedContracts = filteredContracts.slice(startIndex, startIndex + itemsPerPage);
+  // Server-side pagination: current list is already paginated from API
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedContracts = filteredContracts;
+  const countAllItems = startIndex + paginatedContracts.length; // best-effort without total
+  const totalPages = 0; // unknown total
+  const safeCurrentPage = currentPage;
+  const hasNextPage = paginatedContracts.length === itemsPerPage;
 
   // Summary stats based on current filtered list
   const summaryStats = useMemo(() => {
@@ -197,16 +191,13 @@ export function useTinChap() {
   ];
 
   // Handlers
-  const openDetailModal = (contract: CreditContract) => {
-    console.log("open detail", contract);
-  };
 
-  const refreshContracts = () => {
-    // no-op in fake mode
+  const refreshContracts = async () => {
+    await fetchContracts();
   };
 
   const deleteContract = async (maHopDong: string) => {
-    setContracts((prev) => prev.filter((c) => c.ma_hop_dong !== maHopDong));
+    setContracts((prev) => prev.filter((c) => (c.MaHD || c.ma_hop_dong) !== maHopDong));
   };
 
   return {
@@ -225,7 +216,9 @@ export function useTinChap() {
     setSearchTerm,
     setSelectedStatus,
     setSelectedTimeRange,
-    setCurrentPage,
+      setCurrentPage,
+      setSortBy,
+      setSortDir,
     // data
     summaryCards,
     paginatedContracts,
@@ -233,8 +226,10 @@ export function useTinChap() {
     itemsPerPage,
     totalPages,
     countAllItems,
+      hasNextPage,
+      loading,
+      error,
     // actions
-    openDetailModal,
     refreshContracts,
     deleteContract,
   };

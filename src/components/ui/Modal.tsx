@@ -11,6 +11,7 @@ interface ModalProps {
   children: ReactNode;
   size?: "sm" | "md" | "lg" | "xl" | "full";
   showCloseButton?: boolean;
+  className?: string;
 }
 
 export default function Modal({ 
@@ -19,7 +20,8 @@ export default function Modal({
   title, 
   children, 
   size = "lg",
-  showCloseButton = true 
+  showCloseButton = true,
+  className = ""
 }: ModalProps) {
   if (!isOpen) return null;
 
@@ -40,15 +42,15 @@ export default function Modal({
       />
       
       {/* Modal Container */}
-      <div className="flex min-h-full items-center justify-center p-4 pb-11">
+      <div className="flex min-h-full items-center justify-center">
         <div 
-          className={`relative w-full ${sizeClasses[size]} transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 scale-100`}
+          className={`relative w-full ${sizeClasses[size]} ${className} transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 `}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Modal Header */}
-          <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50/30">
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
+          <div className="flex items-center justify-between p-3 sm:p-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50/30">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2 sm:gap-3">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">+</span>
               </div>
               {title}

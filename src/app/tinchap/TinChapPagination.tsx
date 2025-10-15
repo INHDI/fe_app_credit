@@ -8,6 +8,7 @@ interface TinChapPaginationProps {
   startIndex: number;
   itemsPerPage: number;
   countAllItems: number;
+  hasNextPage?: boolean;
 }
 
 export default function TinChapPagination({
@@ -17,6 +18,7 @@ export default function TinChapPagination({
   startIndex,
   itemsPerPage,
   countAllItems,
+  hasNextPage,
 }: TinChapPaginationProps) {
   return (
     <div className="p-6 border-t border-slate-200 bg-gradient-to-r from-slate-50/50 to-blue-50/30">
@@ -32,37 +34,19 @@ export default function TinChapPagination({
           variant="outline"
           size="sm"
           className="rounded-xl border-slate-200 hover:bg-slate-50 shadow-sm"
-          disabled={currentPage <= 1 || totalPages === 0}
+          disabled={currentPage <= 1}
           onClick={() => setCurrentPage(currentPage - 1)}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           Trước
         </Button>
-        <div className="flex gap-1">
-          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-            const page = i + 1;
-            return (
-              <Button
-                key={`tinchap-page-${page}`}
-                variant={currentPage === page ? "default" : "outline"}
-                size="sm"
-                className={`w-10 h-10 rounded-xl transition-all duration-200 ${
-                  currentPage === page 
-                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg" 
-                    : "border-slate-200 hover:bg-slate-50 shadow-sm"
-                }`}
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </Button>
-            );
-          })}
-        </div>
+        {/* Server paginated, page numbers unknown; keep simple prev/next */}
+        <div className="flex gap-1" />
         <Button
           variant="outline"
           size="sm"
           className="rounded-xl border-slate-200 hover:bg-slate-50 shadow-sm"
-          disabled={totalPages === 0 || currentPage >= totalPages}
+          disabled={!hasNextPage}
           onClick={() => setCurrentPage(currentPage + 1)}
         >
           Sau

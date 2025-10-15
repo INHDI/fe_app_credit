@@ -30,8 +30,9 @@ export default function TraGopFilter({
   setSelectedTimeRange,
 }: TraGopFilterProps) {
   return (
-    <div className="my-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="my-3">
+      <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">Tìm kiếm</label>
           <div className="flex-1 relative">
@@ -60,32 +61,35 @@ export default function TraGopFilter({
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">Trạng thái</label>
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white shadow-sm">
+            <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white shadow-sm data-[state=open]:ring-2 data-[state=open]:ring-blue-200">
               <SelectValue placeholder="Chọn trạng thái" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả trạng thái</SelectItem>
-              <SelectItem value="chua_thanh_toan">Chưa thanh toán</SelectItem>
-              <SelectItem value="da_thanh_toan">Đã thanh toán</SelectItem>
-              <SelectItem value="thanh_toan_mot_phan">Thanh toán một phần</SelectItem>
+            <SelectContent className="z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-1">
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="all">Tất cả trạng thái</SelectItem>
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="Chưa thanh toán">Chưa thanh toán</SelectItem>
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="Đóng đủ">Đóng đủ</SelectItem>
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="Thanh toán một phần">Thanh toán một phần</SelectItem>
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="Đã tất toán">Đã tất toán</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-1">
           <label className="text-sm font-medium text-slate-700">Thời gian</label>
           <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
-            <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white shadow-sm">
+            <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white shadow-sm data-[state=open]:ring-2 data-[state=open]:ring-blue-200">
               <SelectValue placeholder="Chọn khoảng thời gian" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Hôm nay</SelectItem>
-              <SelectItem value="yesterday">Hôm qua</SelectItem>
-              <SelectItem value="tomorrow">Ngày mai</SelectItem>
-              <SelectItem value="week">Tuần này</SelectItem>
-              <SelectItem value="all">Tất cả thời gian</SelectItem>
+            <SelectContent className="z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-1">
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="all">Tất cả thời gian</SelectItem>
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="today">Hôm nay</SelectItem>
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="week">Tuần này</SelectItem>
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="month">Tháng này</SelectItem>
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="quarter">Quý này</SelectItem>
+              <SelectItem className="rounded-lg px-3 py-2 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" value="year">Năm này</SelectItem>
             </SelectContent>
           </Select>
         </div>
+      </div>
       </div>
     </div>
   );

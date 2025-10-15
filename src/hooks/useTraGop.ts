@@ -1,22 +1,37 @@
 import { useNavigation } from "@/hooks/useNavigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { FileText, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
+import { API_CONFIG, ENV_CONFIG } from "@/config/config";
 
 export interface CreditContract {
-  id: string;
-  ma_hop_dong: string;
-  ten_khach_hang: string;
-  customerInfo: string;
-  loai_hop_dong: string;
-  tong_tien_can_tra: number;
-  lai_suat: string;
-  kieu_lai_suat: string;
-  tien_da_tra: string; // string in table usage
-  tong_tien_con_lai: string; // string in table usage
-  tien_can_tra_theo_ky: number;
-  status: string;
-  statusColor: string;
+  // New API fields
+  MaHD: string;
+  HoTen: string;
+  NgayVay: string;
+  SoTienVay: number;
+  KyDong: number;
+  SoLanTra: number;
+  LaiSuat: number;
+  TrangThai: string;
+  LichSuTraLai?: any[];
+  DaThanhToan?: number;
+  ConLai?: number;
+
+  // Legacy fields used by existing UI (for backward compatibility)
+  id?: string;
+  ma_hop_dong?: string;
+  ten_khach_hang?: string;
+  customerInfo?: string;
+  loai_hop_dong?: string;
+  tong_tien_can_tra?: number;
+  lai_suat?: string;
+  kieu_lai_suat?: string;
+  tien_da_tra?: string;
+  tong_tien_con_lai?: string;
+  tien_can_tra_theo_ky?: number;
+  status?: string;
+  statusColor?: string;
 }
 
 export interface SummaryCard {
@@ -48,45 +63,10 @@ export function useTraGop() {
     },
   ];
 
-  // Fake data
-  const initialContracts: CreditContract[] = useMemo(
-    () => [
-      {
-        id: "TG001",
-        ma_hop_dong: "HD-TG-0001",
-        ten_khach_hang: "Phạm Minh D",
-        customerInfo: "CCCD 123456789000",
-        loai_hop_dong: "Trả gốc lãi",
-        tong_tien_can_tra: 60000000,
-        lai_suat: "2.2%",
-        kieu_lai_suat: "thang",
-        tien_da_tra: String(18000000),
-        tong_tien_con_lai: String(42000000),
-        tien_can_tra_theo_ky: 3000000,
-        status: "Đang trả góp",
-        statusColor: "bg-blue-100 text-blue-700",
-      },
-      {
-        id: "TG002",
-        ma_hop_dong: "HD-TG-0002",
-        ten_khach_hang: "Đỗ Thị E",
-        customerInfo: "CCCD 222333444555",
-        loai_hop_dong: "Hợp đồng thường",
-        tong_tien_can_tra: 45000000,
-        lai_suat: "1.8%",
-        kieu_lai_suat: "thang",
-        tien_da_tra: String(45000000),
-        tong_tien_con_lai: String(0),
-        tien_can_tra_theo_ky: 2500000,
-        status: "Đã thanh toán",
-        statusColor: "bg-emerald-100 text-emerald-700",
-      },
-    ],
-    []
-  );
-
-  // UI state
-  const [contracts, setContracts] = useState<CreditContract[]>(initialContracts);
+  // Data state
+  const [contracts, setContracts] = useState<CreditContract[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -94,48 +74,66 @@ export function useTraGop() {
   const [selectedloai_hop_dong, setSelectedloai_hop_dong] = useState<string>("all");
 
   const itemsPerPage = 10;
+  const [sortBy, setSortBy] = useState<string>("NgayVay");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const fetchContracts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const url = new URL(`${ENV_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.TRA_GOP}`);
+      url.searchParams.set("page", String(currentPage));
+      url.searchParams.set("page_size", String(itemsPerPage));
+      url.searchParams.set("sort_by", sortBy);
+      url.searchParams.set("sort_dir", sortDir);
+      if (selectedStatus && selectedStatus !== "all") {
+        url.searchParams.set("status", selectedStatus);
+      }
+      if (searchTerm.trim()) {
+        url.searchParams.set("search", searchTerm.trim());
+      }
+
+      const resp = await fetch(url.toString(), { headers: { accept: "application/json" } });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      if (json?.success && Array.isArray(json.data)) {
+        setContracts(json.data as CreditContract[]);
+      } else {
+        setContracts([]);
+      }
+    } catch (e: any) {
+      setError(e?.message || "Fetch trả góp thất bại");
+      setContracts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage, sortBy, sortDir, selectedStatus, searchTerm]);
+
+  useEffect(() => {
+    fetchContracts();
+  }, [fetchContracts]);
 
   // Derived
   const filteredContracts = useMemo(() => {
-    let list = contracts;
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase();
-      list = list.filter(
-        (c) =>
-          c.ma_hop_dong.toLowerCase().includes(q) ||
-          c.ten_khach_hang.toLowerCase().includes(q) ||
-          c.customerInfo.toLowerCase().includes(q)
-      );
-    }
-    if (selectedStatus !== "all") {
-      if (selectedStatus === "da_thanh_toan") {
-        list = list.filter((c) => c.status === "Đã thanh toán");
-      } else if (selectedStatus === "chua_thanh_toan") {
-        list = list.filter((c) => c.status !== "Đã thanh toán");
-      } else if (selectedStatus === "thanh_toan_mot_phan") {
-        list = list.filter((c) => parseFloat(c.tong_tien_con_lai) > 0 && parseFloat(c.tien_da_tra) > 0);
-      }
-    }
-    if (selectedloai_hop_dong !== "all") {
-      list = list.filter((c) => c.loai_hop_dong === selectedloai_hop_dong);
-    }
-    // selectedTimeRange ignored in fake mode
-    return list;
-  }, [contracts, searchTerm, selectedStatus, selectedloai_hop_dong]);
+    // server-side filtering by search/status now
+    return contracts;
+  }, [contracts]);
 
-  const countAllItems = filteredContracts.length;
-  const totalPages = Math.ceil(countAllItems / itemsPerPage) || 0;
-  const safeCurrentPage = Math.min(Math.max(currentPage, 1), Math.max(totalPages, 1));
-  const startIndex = (safeCurrentPage - 1) * itemsPerPage;
-  const paginatedContracts = filteredContracts.slice(startIndex, startIndex + itemsPerPage);
+  // Server-side pagination
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedContracts = filteredContracts;
+  const countAllItems = startIndex + paginatedContracts.length;
+  const totalPages = 0; // unknown
+  const safeCurrentPage = currentPage;
+  const hasNextPage = paginatedContracts.length === itemsPerPage;
 
   // Summary
   const summaryStats = useMemo(() => {
     const totalContracts = filteredContracts.length;
-    const activeContracts = filteredContracts.filter((c) => c.status !== "Đã thanh toán").length;
-    const totaltong_tien_vay = filteredContracts.reduce((sum, c) => sum + (c.tong_tien_can_tra || 0), 0);
-    const totaltien_da_tra = filteredContracts.reduce((sum, c) => sum + parseFloat(c.tien_da_tra || "0"), 0);
-    const totaltong_tien_con_lai = filteredContracts.reduce((sum, c) => sum + parseFloat(c.tong_tien_con_lai || "0"), 0);
+    const activeContracts = filteredContracts.filter((c) => (c.TrangThai || c.status) !== "Đã tất toán").length;
+    const totaltong_tien_vay = filteredContracts.reduce((sum, c) => sum + (c.SoTienVay || c.tong_tien_can_tra || 0), 0);
+    const totaltien_da_tra = filteredContracts.reduce((sum, c) => sum + (c.DaThanhToan || parseFloat(c.tien_da_tra || "0") || 0), 0);
+    const totaltong_tien_con_lai = filteredContracts.reduce((sum, c) => sum + (c.ConLai || parseFloat(c.tong_tien_con_lai || "0") || 0), 0);
     return { totalContracts, activeContracts, totaltong_tien_vay, totaltien_da_tra, totaltong_tien_con_lai };
   }, [filteredContracts]);
 
@@ -182,11 +180,13 @@ export function useTraGop() {
     },
   ];
 
-  // Actions (fake)
+  // Actions
   const openDetailModal = (contract: CreditContract) => {
     console.log("open detail", contract);
   };
-  const refreshContracts = () => {};
+  const refreshContracts = async () => {
+    await fetchContracts();
+  };
   const deleteContract = async (maHopDong: string) => {
     setContracts((prev) => prev.filter((c) => c.ma_hop_dong !== maHopDong));
   };
@@ -214,6 +214,9 @@ export function useTraGop() {
     itemsPerPage,
     totalPages,
     countAllItems,
+    hasNextPage,
+    loading,
+    error,
     openDetailModal,
     refreshContracts,
     deleteContract,
