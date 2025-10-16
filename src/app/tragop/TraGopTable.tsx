@@ -305,6 +305,7 @@ export default function TraGopTable({ contracts, startIndex, onViewDetails, onSe
         maHopDong={selectedForSettle?.MaHD || selectedForSettle?.ma_hop_dong}
         tenKhachHang={selectedForSettle?.HoTen || selectedForSettle?.ten_khach_hang}
         onSettled={onSettled}
+        paymentHistory={selectedForSettle?.LichSuTraLai}
       />
       {/* Detail Modal */}
       <TraGopDetailModal

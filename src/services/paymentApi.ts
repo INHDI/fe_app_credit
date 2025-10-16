@@ -33,4 +33,18 @@ export async function payFullByContract(maHD: string): Promise<BasicApiResponse>
   return await resp.json();
 }
 
+// PUT /tin-chap/tra-goc/{MaHD}?so_tien_tra_goc={amount}
+export async function payPrincipalTinChap(maHD: string, amount: number): Promise<BasicApiResponse> {
+  const base = `${ENV_CONFIG.API_BASE_URL}`;
+  const url = `${base}/tin-chap/tra-goc/${maHD}?so_tien_tra_goc=${amount}`;
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: API_HEADERS.JSON_ACCEPT,
+  });
+  if (!resp.ok) {
+    throw new Error(`HTTP ${resp.status}`);
+  }
+  return await resp.json();
+}
+
 

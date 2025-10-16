@@ -229,13 +229,14 @@ export default function GenericContractDetailModal({
                 <div className="space-y-2 sm:space-y-3 max-h-64 sm:max-h-96 overflow-y-auto">
                   {[...paymentHistory]
                     .sort((a, b) => {
-                      // Ưu tiên theo TrangThaiNgayThanhToan: Đến hạn -> Chưa đến hạn -> Quá hạn
+                      // Ưu tiên theo TrangThaiNgayThanhToan: Đến hạn -> Chưa đến hạn -> Quá hạn -> Quá kỳ đóng lãi
                       const getDuePriority = (p: any) => {
                         const s = (p as any).TrangThaiNgayThanhToan || (p as any).trang_thai_ngay || '';
                         if (s === 'Đến hạn') return 0;
                         if (s === 'Chưa đến hạn') return 1;
                         if (s === 'Quá hạn') return 2;
-                        return 3;
+                        if (s === 'Quá kỳ đóng lãi') return 3;
+                        return 4;
                       };
                       const priorityA = getDuePriority(a);
                       const priorityB = getDuePriority(b);
@@ -288,7 +289,9 @@ export default function GenericContractDetailModal({
                               ? 'bg-indigo-100 text-indigo-700'
                               : dueStatus === 'Chưa đến hạn'
                               ? 'bg-slate-100 text-slate-700'
-                              : 'bg-red-100 text-red-700';
+                              : dueStatus === 'Quá kỳ đóng lãi'
+                              ? 'bg-red-200 text-red-800 border border-red-300 font-bold animate-pulse'
+                              : 'bg-red-200 text-red-800 border border-red-300 font-bold animate-pulse';
                             return (
                               <>
                                 <Badge className={`${payClass} border-0 font-medium px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm flex-shrink-0`}>
@@ -298,7 +301,7 @@ export default function GenericContractDetailModal({
                                   {dueStatus || 'Không xác định'}
                                 </Badge>
                                 {/* Nút thanh toán - chỉ hiển thị khi chưa trả và không quá hạn */}
-                                {(!isPaid && dueStatus !== 'Quá hạn') && (
+                                {(!isPaid && dueStatus !== 'Quá hạn' && dueStatus !== 'Quá kỳ đóng lãi') && (
                                   <Button
                                     size="sm"
                                     onClick={() => {

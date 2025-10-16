@@ -20,7 +20,9 @@ import {
 // import { getTraLaiByContract } from '@/apis/traLaiTinChap-api';
 // import { TraLaiTinChapResponse } from '@/models/tinChap';
 import PaymentModal from '@/components/ui/PaymentModal';
-import { payInterestByRecord } from '@/services/paymentApi';
+import { payInterestByRecord, payPrincipalTinChap } from '@/services/paymentApi';
+import PrincipalPaymentModal from '@/components/ui/PrincipalPaymentModal';
+import PaymentsList from '@/components/ui/PaymentsList';
 
 interface TinChapDetailModalProps {
   isOpen: boolean;
@@ -79,6 +81,8 @@ export default function TinChapDetailModal({
   const processPaymentInterest = async (paymentId: number, amount: number) => {
     await payInterestByRecord(paymentId, amount);
   };
+
+  const [principalModalOpen, setPrincipalModalOpen] = useState(false);
 
   if (!contract) return null;
 
@@ -225,76 +229,12 @@ export default function TinChapDetailModal({
                   <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto"></div>
                   <p className="text-slate-600 mt-2 text-sm sm:text-base">Đang tải lịch sử...</p>
                 </div>
-              ) : paymentHistory.length > 0 ? (
-                <div className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-80 overflow-y-auto">
-                  {[...paymentHistory]
-                    .sort((a: any, b: any) => {
-                      const order = (s: string) => (s === 'Đến hạn' ? 0 : s === 'Chưa đến hạn' ? 1 : 2);
-                      const pa = order(a.TrangThaiNgayThanhToan || '');
-                      const pb = order(b.TrangThaiNgayThanhToan || '');
-                      if (pa !== pb) return pa - pb;
-                      const dateA = new Date(a.Ngay);
-                      const dateB = new Date(b.Ngay);
-                      return dateB.getTime() - dateA.getTime();
-                    })
-                    .map((payment: any) => {
-                      const isPaid = payment.TrangThaiThanhToan === 'Đóng đủ' || payment.TrangThaiThanhToan === 'Đã tất toán';
-                      const payClass = isPaid
-                        ? 'bg-green-100 text-green-700'
-                        : payment.TrangThaiThanhToan === 'Thanh toán một phần'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-amber-100 text-amber-700';
-                      const dueClass = payment.TrangThaiNgayThanhToan === 'Đến hạn'
-                        ? 'bg-indigo-100 text-indigo-700'
-                        : payment.TrangThaiNgayThanhToan === 'Chưa đến hạn'
-                        ? 'bg-slate-100 text-slate-700'
-                        : 'bg-red-100 text-red-700';
-                      return (
-                        <div key={`tinchap-detail-payment-${payment.Stt}`} className="bg-white rounded-lg p-3 sm:p-4 border border-slate-200">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
-                            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span className="text-xs sm:text-sm font-semibold text-blue-600">{payment.Stt}</span>
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="font-semibold text-slate-800 text-sm sm:text-base truncate">{new Date(payment.Ngay).toLocaleDateString('vi-VN')}</p>
-                                <p className="text-xs sm:text-sm text-slate-600 truncate">{payment.NoiDung}</p>
-                                <p className="text-xs sm:text-sm text-slate-500 truncate">Số tiền: {formatCurrency(payment.SoTien)} | Đã trả: {formatCurrency(payment.TienDaTra || 0)}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 self-end sm:self-auto">
-                              <Badge className={`${payClass} border-0 font-medium px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm flex-shrink-0`}>{payment.TrangThaiThanhToan}</Badge>
-                              <Badge className={`${dueClass} border-0 font-medium px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm flex-shrink-0`}>{payment.TrangThaiNgayThanhToan}</Badge>
-                              {!isPaid && payment.TrangThaiNgayThanhToan !== 'Quá hạn' && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    const soTienConLai = Math.max(0, (payment.SoTien || 0) - (payment.TienDaTra || 0));
-                                    handlePayment(payment.Stt, soTienConLai);
-                                  }}
-                                  className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-2 sm:px-3 py-1 text-xs flex-shrink-0"
-                                >
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  <span className="hidden sm:inline">Thanh toán</span>
-                                  <span className="sm:hidden">Trả</span>
-                                </Button>
-                              )}
-                              {isPaid && (
-                                <Button size="sm" variant="outline" className="rounded-lg px-2 sm:px-3 py-1 text-xs flex-shrink-0" disabled>
-                                  Hoàn tác
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
               ) : (
-                <div className="text-center py-8 sm:py-12">
-                  <CalendarDays className="h-12 w-12 sm:h-16 sm:w-16 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-600 text-sm sm:text-base">Chưa có lịch sử trả lãi</p>
-                </div>
+                <PaymentsList
+                  items={paymentHistory as any}
+                  onPayClick={(id, remain) => handlePayment(Number(id), remain)}
+                  disablePayWhen={(p) => p.TrangThaiNgayThanhToan === 'Quá hạn' || p.TrangThaiNgayThanhToan === 'Quá kỳ đóng lãi'}
+                />
               )}
             </div>
           </div>
@@ -368,7 +308,27 @@ export default function TinChapDetailModal({
           <span className="hidden sm:inline">In hợp đồng</span>
           <span className="sm:hidden">In</span>
         </Button>
+        <Button
+          onClick={() => setPrincipalModalOpen(true)}
+          className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl shadow-lg px-4 sm:px-8 text-sm flex-1 sm:flex-none"
+        >
+          Thanh toán gốc
+        </Button>
       </div>
+
+      {contract && (
+        <PrincipalPaymentModal
+          isOpen={principalModalOpen}
+          onClose={() => setPrincipalModalOpen(false)}
+          maHopDong={(contract as any).MaHD || (contract as any).ma_hop_dong}
+          remainingPrincipal={(contract as any).GocConLai || 0}
+          onPaymentSuccess={() => { onRefresh && onRefresh(); }}
+          onProcessPayment={async (amount) => {
+            const maHD = (contract as any).MaHD || (contract as any).ma_hop_dong;
+            await payPrincipalTinChap(maHD, amount);
+          }}
+        />
+      )}
 
       {/* Payment Modal */}
       {selectedPayment && (
