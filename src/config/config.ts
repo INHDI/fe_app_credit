@@ -4,7 +4,9 @@ export const API_CONFIG = {
   ENDPOINTS: {
     TIN_CHAP: '/tin-chap',
     TRA_GOP: '/tra-gop',
-    LICH_SU_TRA_LAI: '/lich-su-tra-lai'
+    LICH_SU_TRA_LAI: '/lich-su-tra-lai',
+    DASHBOARD: '/dashboard',
+    LICH_SU: '/lich-su'
   }
 } as const;
 

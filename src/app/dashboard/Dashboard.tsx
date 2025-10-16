@@ -12,11 +12,14 @@ import {
   Target,
   AlertTriangle,
   Calendar,
+  Loader2,
 } from "lucide-react";
 import StatsCard from "@/components/ui/StatsCard";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type React from "react";
+import { fetchDashboardData, type DashboardData } from "@/services/dashboardApi";
+import { formatCurrency } from "@/lib/utils";
 
 type DashboardFilters = {
   window: "all" | "this_month" | "this_quarter" | "this_year";
@@ -27,6 +30,9 @@ type DashboardFilters = {
 
 export default function Dashboard() {
   const [filters, setFilters] = useState<DashboardFilters>({ window: "all" });
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const availablePeriods = {
     current_year: 2025,
@@ -34,23 +40,82 @@ export default function Dashboard() {
     current_month: 10,
     current_quarter: 4,
   };
-  const data = {
-    dashboard_summary: {
-      lai_thu_du_kien: { da_thu: 68, chua_thu: 32 },
-      ti_le_loi_nhuan: { tin_chap: 54, tra_gop: 46 },
-    },
-  };
-  const unpaidCount = 12;
+
+  // Fetch dashboard data
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetchDashboardData(filters.window);
+        if (response.success) {
+          setDashboardData(response.data);
+        } else {
+          setError(response.message || 'Không thể tải dữ liệu');
+        }
+      } catch (err) {
+        setError('Lỗi kết nối đến server');
+        console.error('Dashboard fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [filters.window]);
 
   const getStatsCards = () => {
-    const total_hop_dong_derived = 120;
-    const total_no_phai_thu_adjusted = Math.min(unpaidCount, total_hop_dong_derived);
+    if (!dashboardData) {
+      return [
+        {
+          title: "Tổng hợp đồng",
+          subtitle: "",
+          description: "",
+          value: "0",
+          icon: FileText,
+          gradient: "bg-gradient-to-r from-blue-50 to-blue-100",
+          iconBg: "bg-blue-500",
+          textColor: "text-blue-700",
+        },
+        {
+          title: "Tổng tiền đã thu",
+          subtitle: "",
+          description: "",
+          value: "0",
+          icon: DollarSign,
+          gradient: "bg-gradient-to-r from-green-50 to-green-100",
+          iconBg: "bg-green-500",
+          textColor: "text-green-700",
+        },
+        {
+          title: "Tổng tiền cần thu",
+          subtitle: "",
+          description: "",
+          value: "0",
+          icon: Target,
+          gradient: "bg-gradient-to-r from-purple-50 to-purple-100",
+          iconBg: "bg-purple-500",
+          textColor: "text-purple-700",
+        },
+        {
+          title: "Nợ phải thu",
+          subtitle: "",
+          description: "",
+          value: "0",
+          icon: AlertTriangle,
+          gradient: "bg-gradient-to-r from-red-50 to-orange-100",
+          iconBg: "bg-red-500",
+          textColor: "text-red-700",
+        },
+      ];
+    }
+
     return [
       {
         title: "Tổng hợp đồng",
         subtitle: "",
         description: "",
-        value: String(total_hop_dong_derived),
+        value: String(dashboardData.tong_hop_dong),
         icon: FileText,
         gradient: "bg-gradient-to-r from-blue-50 to-blue-100",
         iconBg: "bg-blue-500",
@@ -60,7 +125,7 @@ export default function Dashboard() {
         title: "Tổng tiền đã thu",
         subtitle: "",
         description: "",
-        value: "120.000.000",
+        value: formatCurrency(dashboardData.tong_tien_da_thu),
         icon: DollarSign,
         gradient: "bg-gradient-to-r from-green-50 to-green-100",
         iconBg: "bg-green-500",
@@ -70,7 +135,7 @@ export default function Dashboard() {
         title: "Tổng tiền cần thu",
         subtitle: "",
         description: "",
-        value: "85.000.000",
+        value: formatCurrency(dashboardData.tong_tien_can_thu),
         icon: Target,
         gradient: "bg-gradient-to-r from-purple-50 to-purple-100",
         iconBg: "bg-purple-500",
@@ -80,7 +145,7 @@ export default function Dashboard() {
         title: "Nợ phải thu",
         subtitle: "",
         description: "",
-        value: String(total_no_phai_thu_adjusted),
+        value: String(dashboardData.no_phai_thu),
         icon: AlertTriangle,
         gradient: "bg-gradient-to-r from-red-50 to-orange-100",
         iconBg: "bg-red-500",
@@ -90,21 +155,42 @@ export default function Dashboard() {
   };
 
   const getLoanData = () => {
+    if (!dashboardData) {
+      return [
+        {
+          type: "Tín chấp",
+          count: 0,
+          total: "0",
+          interest: "0",
+          profit: "0",
+          color: "bg-blue-100 text-blue-700 border border-blue-200",
+        },
+        {
+          type: "Trả góp",
+          count: 0,
+          total: "0",
+          interest: "0",
+          profit: "0",
+          color: "bg-orange-100 text-orange-700 border border-orange-200",
+        },
+      ];
+    }
+
     return [
       {
         type: "Tín chấp",
-        count: 72,
-        total: "150.000.000",
-        interest: "45.000.000",
-        profit: "15.000.000",
+        count: dashboardData.loai_hinh_vay.tin_chap.so_hop_dong,
+        total: formatCurrency(dashboardData.loai_hinh_vay.tin_chap.tien_cho_vay),
+        interest: formatCurrency(dashboardData.loai_hinh_vay.tin_chap.tien_da_thu),
+        profit: formatCurrency(dashboardData.loai_hinh_vay.tin_chap.tien_no_can_tra),
         color: "bg-blue-100 text-blue-700 border border-blue-200",
       },
       {
         type: "Trả góp",
-        count: 48,
-        total: "110.000.000",
-        interest: "35.000.000",
-        profit: "12.000.000",
+        count: dashboardData.loai_hinh_vay.tra_gop.so_hop_dong,
+        total: formatCurrency(dashboardData.loai_hinh_vay.tra_gop.tien_cho_vay),
+        interest: formatCurrency(dashboardData.loai_hinh_vay.tra_gop.tien_da_thu),
+        profit: formatCurrency(dashboardData.loai_hinh_vay.tra_gop.tien_no_can_tra),
         color: "bg-orange-100 text-orange-700 border border-orange-200",
       },
     ];
@@ -206,6 +292,50 @@ export default function Dashboard() {
       )}
     </div>
   );
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-4 md:space-y-6" suppressHydrationWarning>
+        <PageHeader
+          title="Tổng quan"
+          description={`Bảng điều khiển và số liệu tổng quan hệ thống - ${getTimeRangeLabel()}`}
+          breadcrumbs={[{ label: "Trang chủ", href: "/" }, { label: "Tổng quan" }]}
+          actions={headerActions}
+        />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
+            <p className="text-slate-600">Đang tải dữ liệu...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-4 md:space-y-6" suppressHydrationWarning>
+        <PageHeader
+          title="Tổng quan"
+          description={`Bảng điều khiển và số liệu tổng quan hệ thống - ${getTimeRangeLabel()}`}
+          breadcrumbs={[{ label: "Trang chủ", href: "/" }, { label: "Tổng quan" }]}
+          actions={headerActions}
+        />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-slate-800 font-semibold mb-2">Lỗi tải dữ liệu</p>
+            <p className="text-slate-600 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Thử lại
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 md:space-y-6" suppressHydrationWarning>
@@ -317,18 +447,24 @@ export default function Dashboard() {
               <div className="text-center">
                 <div className="relative w-32 h-32 mx-auto mb-4">
                   <div className="w-32 h-32 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-xl">{data.dashboard_summary.lai_thu_du_kien.da_thu}%</span>
+                    <span className="text-white font-bold text-xl">
+                      {dashboardData?.ti_le_lai_thu.da_thu.toFixed(2) || 0}%
+                    </span>
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-300/30 to-teal-300/30 rounded-full blur-xl"></div>
                 </div>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-center gap-3">
                     <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-sm"></div>
-                    <span className="font-medium">Đã thu: {data.dashboard_summary.lai_thu_du_kien.da_thu}%</span>
+                    <span className="font-medium">
+                      Đã thu: {dashboardData?.ti_le_lai_thu.da_thu.toFixed(2) || 0}%
+                    </span>
                   </div>
                   <div className="flex items-center justify-center gap-3">
                     <div className="w-3 h-3 bg-orange-400 rounded-full shadow-sm"></div>
-                    <span className="font-medium">Chưa thu: {data.dashboard_summary.lai_thu_du_kien.chua_thu}%</span>
+                    <span className="font-medium">
+                      Chưa thu: {dashboardData?.ti_le_lai_thu.chua_thu.toFixed(2) || 0}%
+                    </span>
                   </div>
                 </div>
               </div>
@@ -348,7 +484,9 @@ export default function Dashboard() {
                 <div className="relative w-32 h-32 mx-auto mb-4">
                   <div className="w-32 h-32 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full flex items-center justify-center shadow-lg">
                     <span className="text-white font-bold text-xl">
-                      {(data.dashboard_summary.ti_le_loi_nhuan.tin_chap + data.dashboard_summary.ti_le_loi_nhuan.tra_gop).toFixed(0)}%
+                      {dashboardData 
+                        ? (dashboardData.ti_le_loi_nhuan.tin_chap + dashboardData.ti_le_loi_nhuan.tra_gop).toFixed(2)
+                        : 0}%
                     </span>
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-300/30 to-indigo-300/30 rounded-full blur-xl"></div>
@@ -356,11 +494,15 @@ export default function Dashboard() {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-center gap-3">
                     <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-sm"></div>
-                    <span className="font-medium">Tín chấp: {data.dashboard_summary.ti_le_loi_nhuan.tin_chap}%</span>
+                    <span className="font-medium">
+                      Tín chấp: {dashboardData?.ti_le_loi_nhuan.tin_chap.toFixed(2) || 0}%
+                    </span>
                   </div>
                   <div className="flex items-center justify-center gap-3">
                     <div className="w-3 h-3 bg-orange-400 rounded-full shadow-sm"></div>
-                    <span className="font-medium">Trả góp: {data.dashboard_summary.ti_le_loi_nhuan.tra_gop}%</span>
+                    <span className="font-medium">
+                      Trả góp: {dashboardData?.ti_le_loi_nhuan.tra_gop.toFixed(2) || 0}%
+                    </span>
                   </div>
                 </div>
               </div>

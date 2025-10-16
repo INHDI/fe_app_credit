@@ -4,6 +4,7 @@ import {
   CreditCard,
   PieChart,
   PiggyBank,
+  History,
 } from "lucide-react"
 
 export const NAVIGATION_SECTIONS = [
@@ -63,7 +64,17 @@ export const NAVIGATION_SECTIONS = [
   },
   {
     title: "Quản lý",
-    items: [  
+    items: [
+      {
+        id: "lichsu",
+        title: "Lịch sử",
+        icon: History,
+        iconBg: "bg-gray-100",
+        hoverColor: "hover:bg-gray-50 hover:text-gray-700",
+        badge: undefined,
+        href: "/lichsu",
+        onClick: undefined,
+      },
       {
         id: "statistics",
         title: "Thống kê",
